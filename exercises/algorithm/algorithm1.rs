@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -69,15 +68,76 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+pub fn merge(mut list_a: LinkedList<T>, mut list_b: LinkedList<T>) -> Self
+where
+    T: PartialOrd,
+{
+    let mut merged_list = LinkedList::new();
+    let mut current_a = list_a.start;
+    let mut current_b = list_b.start;
+    let mut tail: Option<NonNull<Node<T>>> = None; // 用于跟踪新链表的尾部
+
+    while current_a.is_some() && current_b.is_some() {
+        // SAFETY: current_a 和 current_b 都是来自链表的有效指针
+        let (a_ptr, b_ptr) = (current_a.unwrap(), current_b.unwrap());
+        let a_val = unsafe { &(*a_ptr.as_ptr()).val };
+        let b_val = unsafe { &(*b_ptr.as_ptr()).val };
+
+        let next_node = if a_val <= b_val {
+            // 移动 current_a 的当前节点
+            current_a = unsafe { (*a_ptr.as_ptr()).next };
+            Some(a_ptr)
+        } else {
+            // 移动 current_b 的当前节点
+            current_b = unsafe { (*b_ptr.as_ptr()).next };
+            Some(b_ptr)
+        };
+
+        if let Some(node_ptr) = next_node {
+            if merged_list.start.is_none() {
+                // 新链表为空，设置头节点
+                merged_list.start = Some(node_ptr);
+            } else {
+                // 将新节点链接到新链表的尾部
+                // SAFETY: tail 指向新链表的有效尾部节点
+                unsafe { (*tail.unwrap().as_ptr()).next = Some(node_ptr) };
+            }
+            tail = Some(node_ptr); // 更新尾指针
+            merged_list.length += 1;
         }
-	}
+    }
+
+    // 处理剩余节点：将非空链表的剩余部分附加到新链表
+    let remaining = if current_a.is_some() {
+        current_a
+    } else {
+        current_b
+    };
+
+    if let Some(remain_ptr) = remaining {
+        if merged_list.start.is_none() {
+            merged_list.start = remaining;
+        } else {
+            // SAFETY: tail 指向新链表的有效尾部节点
+            unsafe { (*tail.unwrap().as_ptr()).next = remaining };
+        }
+
+        merged_list.end = remaining;
+
+    } else {
+        merged_list.end = tail;
+    }
+
+    // 重要：清空输入链表，避免重复释放已移动的节点
+    list_a.start = None;
+    list_a.end = None;
+    list_a.length = 0;
+    list_b.start = None;
+    list_b.end = None;
+    list_b.length = 0;
+
+    merged_list
+}
 }
 
 impl<T> Display for LinkedList<T>

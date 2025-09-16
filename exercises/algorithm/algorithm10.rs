@@ -2,7 +2,6 @@
 	graph
 	This problem requires you to implement a basic graph functio
 */
-// I AM NOT DONE
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -28,8 +27,22 @@ impl Graph for UndirectedGraph {
     fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>> {
         &self.adjacency_table
     }
-    fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
+     fn add_edge(&mut self, edge: (&str, &str, i32)) {
+        let (from, to, weight) = edge;
+        // 确保节点存在，如果不存在则添加
+        self.add_node(from);
+        self.add_node(to);
+        
+        let from_string = from.to_string();
+        let to_string = to.to_string();
+        
+        // 添加 from -> to 的边
+        let adj_list_from = self.adjacency_table_mutable().get_mut(&from_string).unwrap();
+        adj_list_from.push((to_string.clone(), weight));
+        
+        // 添加 to -> from 的边（无向图双向）
+        let adj_list_to = self.adjacency_table_mutable().get_mut(&to_string).unwrap();
+        adj_list_to.push((from_string, weight));
     }
 }
 pub trait Graph {
@@ -38,7 +51,12 @@ pub trait Graph {
     fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>>;
     fn add_node(&mut self, node: &str) -> bool {
         //TODO
-		true
+		 if self.contains(node) {
+            false 
+        } else {
+            self.adjacency_table_mutable().insert(node.to_string(), Vec::new());
+            true 
+        }
     }
     fn add_edge(&mut self, edge: (&str, &str, i32)) {
         //TODO
